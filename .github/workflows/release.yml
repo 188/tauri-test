@@ -86,4 +86,4 @@ jobs:
       with:
         name: Tauri-${{ matrix.os }}-${{ matrix.arch }}
         path: Tauri-${{ matrix.os }}-${{ matrix.arch }}.zip
-        
+      
