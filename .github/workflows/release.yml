@@ -1,94 +1,53 @@
-name: Build Tauri App
+name: "test-on-pr"
 
-on:
-  push:
-    branches:
-      - main 
-  pull_request: {}
+on: [pull_request]
+
+# This workflow will build your tauri app without uploading it anywhere.
 
 jobs:
-  build:
-    runs-on: ${{ matrix.os }}
+  test-tauri:
     strategy:
+      fail-fast: false
       matrix:
-        os: [macos-latest]
-        arch:
-          - x86_64
-          - aarch64
         include:
-          - os: macos-latest
-            arch: x86_64
-          - os: macos-latest
-            arch: aarch64
+          - platform: "macos-latest" # for Arm based macs (M1 and above).
+            args: "--target aarch64-apple-darwin"
+          - platform: "macos-latest" # for Intel based macs.
+            args: "--target x86_64-apple-darwin"
+          - platform: "ubuntu-22.04" # for Tauri v1 you could replace this with ubuntu-20.04.
+            args: ""
+          - platform: "windows-latest"
+            args: ""
 
+    runs-on: ${{ matrix.platform }}
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
-    - name: Setup Node.js
-      uses: actions/setup-node@v3
-      with:
-        node-version: 20.12.2 
+      - name: setup node
+        uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
 
-    - name: Install Rust
-      uses: actions-rs/toolchain@v1
-      with:
-        toolchain: stable
-        target: ${{ matrix.arch }}-${{ matrix.os == 'macos-latest' && 'apple-darwin' || matrix.os == 'ubuntu-latest' && 'unknown-linux-gnu' || 'pc-windows-msvc' }}
-        profile: minimal
+      - name: install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          # Those targets are only used on macos runners so it's in an `if` to slightly speed up windows and linux builds.
+          targets: ${{ matrix.platform == 'macos-latest' && 'aarch64-apple-darwin,x86_64-apple-darwin' || '' }}
 
-    - name: Install pnpm
-      run: npm install -g pnpm
+      - name: install dependencies (ubuntu only)
+        if: matrix.platform == 'ubuntu-22.04' # This must match the platform value defined above.
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.0-dev libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
+        # webkitgtk 4.0 is for Tauri v1 - webkitgtk 4.1 is for Tauri v2.
+        # You can remove the one that doesn't apply to your app to speed up the workflow a bit.
 
-    - name: Install dependencies
-      run: pnpm install
+      - name: install frontend dependencies
+        run: yarn install # change this to npm, pnpm or bun depending on which one you use.
 
-    #- name: Install Tauri dependencies
-      #run: |
-       # brew install xcodegen
-
-    - name: Decrypt and Import Certificate
-      env:
-        APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
-      run: |
-        # 解密 Base64 编码的 p12 文件
-        echo "${{ secrets.APPLE_CERTIFICATE_P12 }}" | base64 --decode > certificate.p12
-        
-        # 创建一个无密码的钥匙链
-        security create-keychain -p "" /Users/runner/Library/Keychains/no-password.keychain-db
-
-        # 导入证书到无密码钥匙链
-        security import certificate.p12 -k /Users/runner/Library/Keychains/no-password.keychain-db -P "$APPLE_CERTIFICATE_PASSWORD" -T /usr/bin/codesign
-        
-        # 设置无密码钥匙链为默认钥匙链
-        security list-keychains -s /Users/runner/Library/Keychains/no-password.keychain-db
-
-
-
-    - name: Build Tauri app
-      env:
-        TAURI_BUILD_TARGET: ${{ matrix.arch }}-${{ matrix.os == 'macos-latest' && 'apple-darwin' || matrix.os == 'ubuntu-latest' && 'unknown-linux-gnu' || 'pc-windows-msvc' }}
-      run: pnpm run tauri build
-
-    - name: Sign Application
-      run: |
-        codesign --sign "Developer ID Application: ${{ secrets.SIGN_IDENTITY }}"  --deep --force --verbose=2 src-tauri/target/release/bundle/macos/tauri-app2.app
-
-    #- name: Verify Code Signing
-      #run: |
-        #codesign --verify --deep --strict --verbose=2 src-tauri/target/release/bundle/macos/*.app
-
-    - name: Compress build output on Linux/macOS
-      if: startsWith(matrix.os, 'ubuntu') || startsWith(matrix.os, 'macos')
-      run: zip -r Tauri-${{ matrix.os }}-${{ matrix.arch }}.zip src-tauri/target/release/bundle/
-      
-    - name: Compress build output on Windows
-      if: startsWith(matrix.os, 'windows')
-      run: Compress-Archive -Path src-tauri/target/release/bundle/* -DestinationPath Tauri-${{ matrix.os }}-${{ matrix.arch }}.zip
-
-    - name: Upload build artifacts
-      uses: actions/upload-artifact@v3
-      with:
-        name: Tauri-${{ matrix.os }}-${{ matrix.arch }}
-        path: Tauri-${{ matrix.os }}-${{ matrix.arch }}.zip
-      
+      # If tagName and releaseId are omitted tauri-action will only build the app and won't try to upload any assets.
+      - uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          args: ${{ matrix.args }}
