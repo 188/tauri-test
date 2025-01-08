@@ -60,7 +60,7 @@ jobs:
           args: ${{ matrix.args }}
 
       - name: Compress build output on Linux/macOS
-        if: startsWith(matrix.os, 'ubuntu') || startsWith(matrix.os, 'macos')
+        #if: startsWith(matrix.os, 'ubuntu') || startsWith(matrix.os, 'macos')
         run: zip -r Tauri-${{ matrix.os }}-${{ matrix.arch }}.zip src-tauri/target/release/bundle/
       
       - name: Compress build output on Windows
