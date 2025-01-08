@@ -11,7 +11,19 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [windows-latest]
+        os: [macos-latest]
+        arch:
+          - x86_64
+          - aarch64
+        include:
+          - os: windows-latest
+            arch: x86_64
+          - os: ubuntu-latest
+            arch: x86_64
+          - os: macos-latest
+            arch: x86_64
+          - os: macos-latest
+            arch: aarch64
 
     steps:
     - name: Checkout code
@@ -26,6 +38,7 @@ jobs:
       uses: actions-rs/toolchain@v1
       with:
         toolchain: stable
+        target: ${{ matrix.arch }}-${{ matrix.os == 'macos-latest' && 'apple-darwin' || matrix.os == 'ubuntu-latest' && 'unknown-linux-gnu' || 'pc-windows-msvc' }}
         profile: minimal
 
     - name: Install pnpm
@@ -35,6 +48,8 @@ jobs:
       run: pnpm install
 
     - name: Build Tauri app
+      env:
+        TAURI_BUILD_TARGET: ${{ matrix.arch }}-${{ matrix.os == 'macos-latest' && 'apple-darwin' || matrix.os == 'ubuntu-latest' && 'unknown-linux-gnu' || 'pc-windows-msvc' }}
       run: pnpm run tauri build
 
     - name: Compress build output on Linux/macOS
