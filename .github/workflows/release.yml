@@ -46,7 +46,6 @@ jobs:
     - name: Install Tauri dependencies
       run: |
         brew install xcodegen
-        cargo install tauri-cli
 
     - name: Decrypt and Import Certificate
       env:
