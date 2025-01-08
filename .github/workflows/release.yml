@@ -50,10 +50,19 @@ jobs:
     - name: Decrypt and Import Certificate
       env:
         APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+        USER_PASSWORD: ${{ secrets.USER_PASSWORD }}
       run: |
+        # 解密 Base64 编码的 p12 文件
         echo "${{ secrets.APPLE_CERTIFICATE_P12 }}" | base64 --decode > certificate.p12
+        
+        # 导入 p12 文件到登录钥匙串
         security import certificate.p12 -k ~/Library/Keychains/login.keychain-db -P "$APPLE_CERTIFICATE_PASSWORD" -T /usr/bin/codesign
-        security set-key-partition-list -S apple-tool:,apple: -s -k "$(security find-generic-password -wa $USER)" ~/Library/Keychains/login.keychain-db
+        
+        # 解锁密钥链
+        security unlock-keychain -p "$USER_PASSWORD" ~/Library/Keychains/login.keychain-db
+        
+        # 设置钥匙链分区列表，确保签名工具有权限访问
+        security set-key-partition-list -S apple-tool:,apple: -s -k "$USER_PASSWORD" ~/Library/Keychains/login.keychain-db
 
     - name: Build Tauri app
       env:
