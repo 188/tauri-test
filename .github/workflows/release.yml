@@ -28,8 +28,11 @@ jobs:
         toolchain: stable
         profile: minimal
 
+    - name: Install pnpm
+      run: npm install -g pnpm
+
     - name: Install dependencies
-      run: npm install pnpm && pnpm i
+      run: pnpm install
 
     - name: Build Tauri app
       run: pnpm run tauri build
