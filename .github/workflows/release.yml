@@ -36,3 +36,12 @@ jobs:
 
     - name: Build Tauri app
       run: pnpm run tauri build
+
+    - name: Compress build output
+      run: zip -r Tauri-${{ matrix.os }}-${{ matrix.arch }}.zip src-tauri/target/release/bundle/
+
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: Tauri-${{ matrix.os }}-${{ matrix.arch }}
+        path: Tauri-${{ matrix.os }}-${{ matrix.arch }}.zip
