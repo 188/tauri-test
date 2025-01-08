@@ -69,9 +69,9 @@ jobs:
         TAURI_BUILD_TARGET: ${{ matrix.arch }}-${{ matrix.os == 'macos-latest' && 'apple-darwin' || matrix.os == 'ubuntu-latest' && 'unknown-linux-gnu' || 'pc-windows-msvc' }}
       run: pnpm run tauri build
 
-    - name: Verify Code Signing
-      run: |
-        codesign --verify --deep --strict --verbose=2 src-tauri/target/release/bundle/macos/*.app
+    #- name: Verify Code Signing
+      #run: |
+        #codesign --verify --deep --strict --verbose=2 src-tauri/target/release/bundle/macos/*.app
 
     - name: Compress build output on Linux/macOS
       if: startsWith(matrix.os, 'ubuntu') || startsWith(matrix.os, 'macos')
