@@ -16,10 +16,6 @@ jobs:
           - x86_64
           - aarch64
         include:
-          - os: windows-latest
-            arch: x86_64
-          - os: ubuntu-latest
-            arch: x86_64
           - os: macos-latest
             arch: x86_64
           - os: macos-latest
