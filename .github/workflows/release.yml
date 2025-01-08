@@ -48,10 +48,20 @@ jobs:
        # brew install xcodegen
 
     - name: Decrypt and Import Certificate
+      env:
+        APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
       run: |
+        # 解密 Base64 编码的 p12 文件
         echo "${{ secrets.APPLE_CERTIFICATE_P12 }}" | base64 --decode > certificate.p12
-        security import certificate.p12 -k ~/Library/Keychains/login.keychain-db -P "${{ secrets.APPLE_CERTIFICATE_PASSWORD }}" -T /usr/bin/codesign
-        security set-key-partition-list -S apple-tool:,apple: -s -k "runner" ~/Library/Keychains/login.keychain-db
+        
+        # 创建一个无密码的钥匙链
+        security create-keychain -p "" /Users/runner/Library/Keychains/no-password.keychain-db
+
+        # 导入证书到无密码钥匙链
+        security import certificate.p12 -k /Users/runner/Library/Keychains/no-password.keychain-db -P "$APPLE_CERTIFICATE_PASSWORD" -T /usr/bin/codesign
+        
+        # 设置无密码钥匙链为默认钥匙链
+        security list-keychains -s /Users/runner/Library/Keychains/no-password.keychain-db
 
 
 
