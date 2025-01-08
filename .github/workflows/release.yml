@@ -43,10 +43,27 @@ jobs:
     - name: Install dependencies
       run: pnpm install
 
+    - name: Install Tauri dependencies
+      run: |
+        brew install xcodegen
+        cargo install tauri-cli
+
+    - name: Decrypt and Import Certificate
+      env:
+        APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+      run: |
+        echo "${{ secrets.APPLE_CERTIFICATE_P12 }}" | base64 --decode > certificate.p12
+        security import certificate.p12 -k ~/Library/Keychains/login.keychain-db -P "$APPLE_CERTIFICATE_PASSWORD" -T /usr/bin/codesign
+        security set-key-partition-list -S apple-tool:,apple: -s -k "$(security find-generic-password -wa $USER)" ~/Library/Keychains/login.keychain-db
+
     - name: Build Tauri app
       env:
         TAURI_BUILD_TARGET: ${{ matrix.arch }}-${{ matrix.os == 'macos-latest' && 'apple-darwin' || matrix.os == 'ubuntu-latest' && 'unknown-linux-gnu' || 'pc-windows-msvc' }}
       run: pnpm run tauri build
+
+    - name: Verify Code Signing
+      run: |
+        codesign --verify --deep --strict --verbose=2 src-tauri/target/release/bundle/macos/*.app
 
     - name: Compress build output on Linux/macOS
       if: startsWith(matrix.os, 'ubuntu') || startsWith(matrix.os, 'macos')
