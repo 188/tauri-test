@@ -57,7 +57,6 @@ jobs:
           ./cosign.exe version # 打印 cosign 版本信息
           ./cosign.exe sign `
             --oidc-issuer=https://token.actions.githubusercontent.com `
-            --audience="repo:${{ github.repository }}:ref=${{ github.ref }}" `
             --fulcio-url=https://fulcio.sigstore.dev `
             --rekor-url=https://rekor.sigstore.dev `
             ./src-tauri/target/release/bundle/msi/tauri-app2_0.1.0_x64_en-US.msi
