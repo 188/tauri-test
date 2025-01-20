@@ -54,6 +54,7 @@ jobs:
             --oidc-issuer=https://token.actions.githubusercontent.com `
             --fulcio-url=https://fulcio.sigstore.dev `
             --rekor-url=https://rekor.sigstore.dev `
+            --oidc-disable-ambient-providers `
             ./src-tauri/target/release/bundle/msi/tauri-app2_0.1.0_x64_en-US.msi
 
       # 上传签名后的文件到 GitHub Release
