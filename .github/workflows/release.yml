@@ -49,12 +49,12 @@ jobs:
       # 使用 Fulcio 进行签名
       - name: Sign MSI using Cosign
         run: |
-          ./cosign.exe sign \
-            --oidc-client-id=sigstore \
-            --oidc-issuer=https://github.com/login/oauth \
-            --fulcio-url=https://fulcio.sigstore.dev \
-            --rekor-url=https://rekor.sigstore.dev \
-            ./src-tauri/target/release/bundle/msi/tauri-test.msi
+          ./cosign.exe sign `
+            --oidc-client-id=sigstore `
+            --oidc-issuer=https://github.com/login/oauth `
+            --fulcio-url=https://fulcio.sigstore.dev `
+            --rekor-url=https://rekor.sigstore.dev `
+            ./src-tauri/target/release/bundle/msi/tauri-app2_0.1.0_x64_en-US.msi
 
       # 上传签名后的文件到 GitHub Release
       - name: Upload release assets
@@ -63,7 +63,7 @@ jobs:
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           release_id: ${{ steps.create_release.outputs.id }}
-          asset_path: ./src-tauri/target/release/bundle/msi/tauri-test.msi
+          asset_path: ./src-tauri/target/release/bundle/msi/tauri-app2_0.1.0_x64_en-US.msi
           asset_name: tauri-test_v${{ github.ref_name }}.msi
           asset_content_type: application/x-msi
 
