@@ -50,12 +50,7 @@ jobs:
       # 使用 Fulcio 进行签名
       - name: Sign MSI using Cosign
         run: |
-         ./cosign.exe sign `
-            --keyless=true `
-            --github-actions `
-            --fulcio-url=https://fulcio.sigstore.dev `
-            --rekor-url=https://rekor.sigstore.dev `
-            ./src-tauri/target/release/bundle/msi/tauri-app2_0.1.0_x64_en-US.msi
+         ./cosign.exe sign  --github-actions  ./src-tauri/target/release/bundle/msi/tauri-app2_0.1.0_x64_en-US.msi
 
       # 上传签名后的文件到 GitHub Release
       - name: Upload release assets
