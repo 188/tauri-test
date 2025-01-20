@@ -9,72 +9,56 @@ on:
 # This workflow will build your tauri app without uploading it anywhere.
 
 jobs:
-  test-tauri:
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          #- platform: "macos-latest" # for Arm based macs (M1 and above).
-            #args: "--target aarch64-apple-darwin"
-          - platform: "macos-latest" # for Intel based macs.
-            args: "--target x86_64-apple-darwin"
-          #- platform: "ubuntu-22.04" # for Tauri v1 you could replace this with ubuntu-20.04.
-           # args: ""
-          #- platform: "windows-latest"
-            #args: ""
+  build:
+    runs-on: windows-latest
 
-    runs-on: ${{ matrix.platform }}
     steps:
-      - uses: actions/checkout@v4
+      # 检出代码
+      - name: Checkout code
+        uses: actions/checkout@v3
 
-      - name: setup node
-        uses: actions/setup-node@v4
+      # 安装 Rust 和 Tauri prerequisites
+      - name: Setup Rust
+        uses: actions-rs/toolchain@v1
         with:
-          node-version: lts/*
+          toolchain: stable
+          target: x86_64-pc-windows-msvc
 
-      - name: install Rust stable
-        uses: dtolnay/rust-toolchain@stable
-        with:
-          # Those targets are only used on macos runners so it's in an `if` to slightly speed up windows and linux builds.
-          targets: ${{ matrix.platform == 'macos-latest' && 'aarch64-apple-darwin,x86_64-apple-darwin' || '' }}
-
-      - name: install dependencies (ubuntu only)
-        if: matrix.platform == 'ubuntu-22.04' # This must match the platform value defined above.
+      - name: Install Tauri dependencies
         run: |
-          sudo apt-get update
-          sudo apt-get install -y libwebkit2gtk-4.0-dev libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
-        # webkitgtk 4.0 is for Tauri v1 - webkitgtk 4.1 is for Tauri v2.
-        # You can remove the one that doesn't apply to your app to speed up the workflow a bit.
+          npm install
+          npm run tauri:build
 
-      - name: install frontend dependencies
-        run: npm install -g pnpm # change this to npm, pnpm or bun depending on which one you use.
-
-      - name: install frontend dependencies
-        run: pnpm install # change this to npm, pnpm or bun depending on which one you use.
-
-      # If tagName and releaseId are omitted tauri-action will only build the app and won't try to upload any assets.
-      - uses: tauri-apps/tauri-action@v0
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE_P12 }}
-          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
-          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
-          APPLE_ID: ${{ secrets.APPLE_ID }}
-          APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
-          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+      # 使用 Sigstore/Fulcio 进行代码签名
+      - name: Sign Executable with Fulcio
+        uses: sigstore/codesign-action@v2
         with:
-          args: ${{ matrix.args }}
+          fulcio-url: https://fulcio.sigstore.dev
+          files: '**/*.msi' # 替换为你需要签名的文件路径
+          oidc-client-id: sigstore
 
-      - name: Compress build output on Linux/macOS
-        #if: startsWith(matrix.os, 'ubuntu') || startsWith(matrix.os, 'macos')
-        run: zip -r Tauri-${{ matrix.os }}-${{ matrix.arch }}.zip /Users/runner/work/tauri-test/tauri-test/src-tauri/target/x86_64-apple-darwin/release/bundle/
-      
-      - name: Compress build output on Windows
-        if: startsWith(matrix.os, 'windows')
-        run: Compress-Archive -Path src-tauri/target/release/bundle/* -DestinationPath Tauri-${{ matrix.os }}-${{ matrix.arch }}.zip
-
-      - name: Upload build artifacts
-        uses: actions/upload-artifact@v3
+      # 上传签名后的文件到 GitHub Release
+      - name: Upload release assets
+        id: upload_release_assets
+        uses: actions/upload-release-asset@v1
         with:
-          name: Tauri-${{ matrix.os }}-${{ matrix.arch }}
-          path: Tauri-${{ matrix.os }}-${{ matrix.arch }}.zip
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          release_id: ${{ steps.create_release.outputs.id }}
+          asset_path: ./src-tauri/target/release/bundle/msi/tauri-test.msi
+          asset_name: tauri-test_v${{ github.ref_name }}.msi
+          asset_content_type: application/x-msi
+
+  create_release:
+    runs-on: ubuntu-latest
+    outputs:
+      id: ${{ steps.create_release.outputs.id }}
+    steps:
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: Release ${{ github.ref }}
+          draft: false
+          prerelease: false
+
