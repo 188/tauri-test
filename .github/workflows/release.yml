@@ -56,6 +56,7 @@ jobs:
         run: |
           ./cosign.exe version # 打印 cosign 版本信息
           ./cosign.exe sign-blob `
+            --yes `
             --oidc-issuer=https://token.actions.githubusercontent.com `
             --fulcio-url=https://fulcio.sigstore.dev `
             --rekor-url=https://rekor.sigstore.dev `
