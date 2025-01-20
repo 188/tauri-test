@@ -40,13 +40,21 @@ jobs:
           pnpm install
           pnpm run tauri:build
 
-       # 使用 Sigstore/Fulcio 进行代码签名
-      - name: Sign Executable with Fulcio
-        uses: sigstore/codesign-action@v2
-        with:
-          fulcio-url: https://fulcio.sigstore.dev
-          files: '**/*.msi' # 替换为你需要签名的文件路径
-          oidc-client-id: sigstore
+# 安装 Cosign
+      - name: Install Cosign
+        run: |
+          curl -fsSL https://github.com/sigstore/cosign/releases/latest/download/cosign-windows-amd64.exe -o cosign.exe
+          chmod +x cosign.exe
+
+      # 使用 Fulcio 进行签名
+      - name: Sign MSI using Cosign
+        run: |
+          ./cosign.exe sign \
+            --oidc-client-id=sigstore \
+            --oidc-issuer=https://github.com/login/oauth \
+            --fulcio-url=https://fulcio.sigstore.dev \
+            --rekor-url=https://rekor.sigstore.dev \
+            ./src-tauri/target/release/bundle/msi/tauri-test.msi
 
       # 上传签名后的文件到 GitHub Release
       - name: Upload release assets
