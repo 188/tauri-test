@@ -9,27 +9,38 @@ on:
 # This workflow will build your tauri app without uploading it anywhere.
 
 jobs:
-  build:
-    runs-on: windows-latest
+  publish-postdata:
+    permissions:
+      contents: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: "windows-latest"
+            args: ""
 
+    runs-on: ${{ matrix.platform }}
     steps:
-      # 检出代码
-      - name: Checkout code
-        uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
-      # 安装 Rust 和 Tauri prerequisites
-      - name: Setup Rust
-        uses: actions-rs/toolchain@v1
+      - name: setup node
+        uses: actions/setup-node@v4
         with:
-          toolchain: stable
-          target: x86_64-pc-windows-msvc
+          node-version: "20.12.2"
 
+      - name: install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          # Those targets are only used on macos runners so it's in an `if` to slightly speed up windows and linux builds.
+          targets: ${{ matrix.platform == 'macos-latest' && 'aarch64-apple-darwin,x86_64-apple-darwin' || '' }}
+          
       - name: Install Tauri dependencies
         run: |
-          npm install
-          npm run tauri:build
+          npm install -g pnpm
+          pnpm install
+          pnpm run tauri:build
 
-      # 使用 Sigstore/Fulcio 进行代码签名
+       # 使用 Sigstore/Fulcio 进行代码签名
       - name: Sign Executable with Fulcio
         uses: sigstore/codesign-action@v2
         with:
@@ -47,18 +58,4 @@ jobs:
           asset_path: ./src-tauri/target/release/bundle/msi/tauri-test.msi
           asset_name: tauri-test_v${{ github.ref_name }}.msi
           asset_content_type: application/x-msi
-
-  create_release:
-    runs-on: ubuntu-latest
-    outputs:
-      id: ${{ steps.create_release.outputs.id }}
-    steps:
-      - name: Create Release
-        id: create_release
-        uses: actions/create-release@v1
-        with:
-          tag_name: ${{ github.ref }}
-          release_name: Release ${{ github.ref }}
-          draft: false
-          prerelease: false
 
