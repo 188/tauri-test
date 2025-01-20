@@ -49,9 +49,9 @@ jobs:
       # 使用 Fulcio 进行签名
       - name: Sign MSI using Cosign
         run: |
-          ./cosign.exe sign `
+         ./cosign.exe sign `
             --oidc-client-id=sigstore `
-            --oidc-issuer=https://github.com/login/oauth `
+            --oidc-issuer=https://github.com `
             --fulcio-url=https://fulcio.sigstore.dev `
             --rekor-url=https://rekor.sigstore.dev `
             ./src-tauri/target/release/bundle/msi/tauri-app2_0.1.0_x64_en-US.msi
