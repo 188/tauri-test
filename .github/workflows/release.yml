@@ -38,7 +38,7 @@ jobs:
         run: |
           npm install -g pnpm
           pnpm install
-          pnpm run tauri:build
+          pnpm tauri build
 
 # 安装 Cosign
       - name: Install Cosign
