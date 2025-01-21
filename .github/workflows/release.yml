@@ -47,16 +47,9 @@ jobs:
           curl -fsSL https://github.com/sigstore/cosign/releases/latest/download/cosign-windows-amd64.exe -o cosign.exe
           chmod +x cosign.exe
 
-      - name: Install Windows SDK
+      - name: Install osslsigncode
         run: |
-          choco install windows-sdk -y
-
-
-      - name: Add signtool to PATH
-        run: |
-          $env:Path += ";C:\Program Files (x86)\Windows Kits\10\bin\x64"
-
-
+          choco install osslsigncode -y
 
       # 使用 Fulcio 进行签名
       - name: Sign MSI using Cosign
@@ -72,8 +65,14 @@ jobs:
             --fulcio-url=https://fulcio.sigstore.dev `
             --rekor-url=https://rekor.sigstore.dev `
             ./src-tauri/target/release/bundle/msi/tauri-app2_0.1.0_x64_en-US.msi
-          signtool timestamp /t http://timestamp.digicert.com ./src-tauri/target/release/bundle/msi/tauri-app2_0.1.0_x64_en-US.msi
         shell: pwsh
+
+      - name: Timestamp signed MSI
+        run: |
+          osslsigncode timestamp -in ./src-tauri/target/release/bundle/msi/tauri-app2_0.1.0_x64_en-US.msi `
+                           -out ./src-tauri/target/release/bundle/msi/tauri-app2_0.1.0_x64_en-US-timestamped.msi `
+                           -t http://timestamp.digicert.com
+        shell: bash
 
 # 上传 MSI 文件到 GitHub Release
       - name: Create Release (Draft)
@@ -91,7 +90,7 @@ jobs:
         uses: actions/upload-release-asset@v1
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./src-tauri/target/release/bundle/msi/tauri-app2_0.1.0_x64_en-US.msi
+          asset_path: ./src-tauri/target/release/bundle/msi/tauri-app2_0.1.0_x64_en-US-timestamped.msi
           asset_name: tauri-app2_0.1.0_x64_en-US.msi
           asset_content_type: application/octet-stream
         env:
