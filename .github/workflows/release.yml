@@ -69,7 +69,7 @@ jobs:
 
       - name: Timestamp signed MSI (Windows)
         run: |
-          osslsigncode timestamp `
+          osslsigncode sign `
             -in ./src-tauri/target/release/bundle/msi/tauri-app2_0.1.0_x64_en-US.msi `
             -out ./src-tauri/target/release/bundle/msi/tauri-app2_0.1.0_x64_en-US-timestamped.msi `
             -t http://timestamp.digicert.com
