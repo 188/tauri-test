@@ -67,12 +67,13 @@ jobs:
             ./src-tauri/target/release/bundle/msi/tauri-app2_0.1.0_x64_en-US.msi
         shell: pwsh
 
-      - name: Timestamp signed MSI
+      - name: Timestamp signed MSI (Windows)
         run: |
-          osslsigncode timestamp -in ./src-tauri/target/release/bundle/msi/tauri-app2_0.1.0_x64_en-US.msi `
-                           -out ./src-tauri/target/release/bundle/msi/tauri-app2_0.1.0_x64_en-US-timestamped.msi `
-                           -t http://timestamp.digicert.com
-        shell: bash
+          osslsigncode timestamp `
+            -in ./src-tauri/target/release/bundle/msi/tauri-app2_0.1.0_x64_en-US.msi `
+            -out ./src-tauri/target/release/bundle/msi/tauri-app2_0.1.0_x64_en-US-timestamped.msi `
+            -t http://timestamp.digicert.com
+        shell: pwsh
 
 # 上传 MSI 文件到 GitHub Release
       - name: Create Release (Draft)
