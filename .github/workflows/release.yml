@@ -41,41 +41,7 @@ jobs:
           pnpm install
           pnpm tauri build
 
-      # 安装 Cosign
-      - name: Install Cosign
-        run: |
-          curl -fsSL https://github.com/sigstore/cosign/releases/latest/download/cosign-windows-amd64.exe -o cosign.exe
-          chmod +x cosign.exe
-
-      - name: Install osslsigncode
-        run: |
-          choco install osslsigncode -y
-
-      # 使用 Fulcio 进行签名
-      - name: Sign MSI using Cosign
-        env:
-          COSIGN_EXPERIMENTAL: "1" # 启用实验特性
-          ACTIONS_ID_TOKEN_REQUEST_URL: ${{ secrets.GITHUB_ID_TOKEN_REQUEST_URL }}
-          ACTIONS_ID_TOKEN_REQUEST_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          ./cosign.exe version # 打印 cosign 版本信息
-          ./cosign.exe sign-blob `
-            --yes `
-            --oidc-issuer=https://token.actions.githubusercontent.com `
-            --fulcio-url=https://fulcio.sigstore.dev `
-            --rekor-url=https://rekor.sigstore.dev `
-            ./src-tauri/target/release/bundle/msi/tauri-app2_0.1.0_x64_en-US.msi
-        shell: pwsh
-
-      - name: Timestamp signed MSI (Windows)
-        run: |
-          osslsigncode sign `
-            -in ./src-tauri/target/release/bundle/msi/tauri-app2_0.1.0_x64_en-US.msi `
-            -out ./src-tauri/target/release/bundle/msi/tauri-app2_0.1.0_x64_en-US-timestamped.msi `
-            -t http://timestamp.digicert.com
-        shell: pwsh
-
-# 上传 MSI 文件到 GitHub Release
+      # 上传 MSI 文件到 GitHub Release
       - name: Create Release (Draft)
         id: create_release
         uses: actions/create-release@v1
@@ -91,7 +57,7 @@ jobs:
         uses: actions/upload-release-asset@v1
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./src-tauri/target/release/bundle/msi/tauri-app2_0.1.0_x64_en-US-timestamped.msi
+          asset_path: ./src-tauri/target/release/bundle/msi/tauri-app2_0.1.0_x64_en-US.msi
           asset_name: tauri-app2_0.1.0_x64_en-US.msi
           asset_content_type: application/octet-stream
         env:
