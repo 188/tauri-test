@@ -60,8 +60,8 @@ jobs:
             --oidc-issuer=https://token.actions.githubusercontent.com `
             --fulcio-url=https://fulcio.sigstore.dev `
             --rekor-url=https://rekor.sigstore.dev `
-            --timestamp-server=http://timestamp.digicert.com `
             ./src-tauri/target/release/bundle/msi/tauri-app2_0.1.0_x64_en-US.msi
+          signtool timestamp /t http://timestamp.digicert.com ./src-tauri/target/release/bundle/msi/tauri-app2_0.1.0_x64_en-US.msi
         shell: pwsh
 
 # 上传 MSI 文件到 GitHub Release
