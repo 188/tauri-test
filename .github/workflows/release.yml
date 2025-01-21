@@ -41,11 +41,21 @@ jobs:
           pnpm install
           pnpm tauri build
 
-# 安装 Cosign
+      # 安装 Cosign
       - name: Install Cosign
         run: |
           curl -fsSL https://github.com/sigstore/cosign/releases/latest/download/cosign-windows-amd64.exe -o cosign.exe
           chmod +x cosign.exe
+
+      - name: Install Windows SDK
+        run: |
+          choco install windows-sdk-10-version-2004 -y
+
+      - name: Add signtool to PATH
+        run: |
+          $env:Path += ";C:\Program Files (x86)\Windows Kits\10\bin\x64"
+
+
 
       # 使用 Fulcio 进行签名
       - name: Sign MSI using Cosign
